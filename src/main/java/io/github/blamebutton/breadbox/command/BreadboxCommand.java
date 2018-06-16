@@ -11,6 +11,9 @@ public interface BreadboxCommand {
 
     /**
      * Handle the execution of a command.
+     *
+     * @param message the message object
+     * @param args    all arguments for the command
      */
     void handle(IMessage message, List<String> args);
 

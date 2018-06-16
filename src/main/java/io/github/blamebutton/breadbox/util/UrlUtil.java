@@ -17,9 +17,26 @@ public class UrlUtil {
         // Private constructor
     }
 
+    /**
+     * Encode a string to an URL safe format
+     *
+     * @param url the url/string
+     * @return the encoded string
+     */
     public static String encode(String url) {
+        return encode(url, "UTF-8");
+    }
+
+    /**
+     * Encode a string to an URL safe format
+     *
+     * @param url     the url/string
+     * @param charset the charset to use for encoding
+     * @return the encoded string
+     */
+    public static String encode(String url, String charset) {
         try {
-            return URLEncoder.encode(url, "UTF-8");
+            return URLEncoder.encode(url, charset);
         } catch (UnsupportedEncodingException e) {
             logger.error("Character set was not recognized", e);
             return null;
