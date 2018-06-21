@@ -1,6 +1,7 @@
 # BreadBox
 
 [![Build Status](https://travis-ci.org/BlameButton/breadbox.svg?branch=master)](https://travis-ci.org/BlameButton/breadbox)
+[![codecov](https://codecov.io/gh/BlameButton/breadbox/branch/master/graph/badge.svg)](https://codecov.io/gh/BlameButton/breadbox)
 
 [Website](https://blamebutton.github.io/breadbox-site)
 

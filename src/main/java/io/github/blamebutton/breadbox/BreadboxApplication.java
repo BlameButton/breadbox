@@ -84,8 +84,8 @@ public class BreadboxApplication {
         }
     }
 
-    public void registerCommand(String command, BreadboxCommand clazz) {
-        commands.put(command, clazz);
+    public void registerCommand(String command, BreadboxCommand klass) {
+        commands.put(command, klass);
     }
 
     public IDiscordClient getClient() {

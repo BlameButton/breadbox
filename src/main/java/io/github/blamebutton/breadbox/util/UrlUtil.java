@@ -34,11 +34,11 @@ public class UrlUtil {
      * @param charset the charset to use for encoding
      * @return the encoded string
      */
-    public static String encode(String url, String charset) {
+    static String encode(String url, String charset) {
         try {
             return URLEncoder.encode(url, charset);
         } catch (UnsupportedEncodingException e) {
-            logger.error("Character set was not recognized", e);
+            logger.error("Unsupported encoding charset found", e);
             return null;
         }
     }

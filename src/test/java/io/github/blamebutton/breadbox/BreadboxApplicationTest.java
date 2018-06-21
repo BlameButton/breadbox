@@ -1,11 +1,18 @@
 package io.github.blamebutton.breadbox;
 
+import io.github.blamebutton.breadbox.command.BreadboxCommand;
+import io.github.blamebutton.breadbox.util.Environment;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sx.blah.discord.handle.obj.IMessage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class BreadboxApplicationTest {
 
@@ -29,11 +36,36 @@ class BreadboxApplicationTest {
 
     @Test
     void getCommand() {
+        String commandName = "get-command-test";
+
+        app.registerCommand(commandName, new BreadboxCommand() {
+            @Override
+            public void handle(IMessage message, List<String> args) {
+            }
+
+            @Override
+            public String getUsage() {
+                return "usage";
+            }
+
+            @Override
+            public String getDescription() {
+                return null;
+            }
+        });
+        BreadboxCommand command = app.getCommand(commandName);
+        assertNotNull(command);
+        assertEquals(command.getUsage(), "usage");
     }
 
     @Test
     void getCommands() {
-        logger.info("{}", app.getCommands());
+        String commandName = "get-commands-test";
+
+        app.registerCommand(commandName, null);
+        Map<String, BreadboxCommand> commands = app.getCommands();
+        boolean contains = commands.containsKey(commandName);
+        assertTrue(contains);
     }
 
     @Test
@@ -42,9 +74,36 @@ class BreadboxApplicationTest {
 
     @Test
     void registerCommand() {
+        String commandName = "register-command-test";
+        app.registerCommand(commandName, new BreadboxCommand() {
+            @Override
+            public void handle(IMessage message, List<String> args) {
+                throw new NotImplementedException("Not implemented.");
+            }
+
+            @Override
+            public String getUsage() {
+                return "test-command <arg> [arg]";
+            }
+
+            @Override
+            public String getDescription() {
+                return "Command for testing purposes.";
+            }
+        });
+
+        Map<String, BreadboxCommand> commands = app.getCommands();
+
+        boolean contains = commands.containsKey(commandName);
+        BreadboxCommand command = commands.get(commandName);
+        assertTrue(contains);
+        assertEquals(command.getUsage(), "test-command <arg> [arg]");
+        assertEquals(command.getDescription(), "Command for testing purposes.");
+        assertThrows(NotImplementedException.class, () -> command.handle(null, null));
     }
 
     @Test
     void getEnvironment() {
+        assertEquals(Environment.LOCAL, app.getEnvironment());
     }
 }
