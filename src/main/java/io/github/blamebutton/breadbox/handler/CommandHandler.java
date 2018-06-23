@@ -17,6 +17,8 @@ import sx.blah.discord.util.RequestBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Handles everything related to messages being received.
@@ -46,6 +48,11 @@ public class CommandHandler {
         onMessageReceived(event);
     }
 
+    /**
+     * Check if the message is a valid command, if so, handle it.
+     *
+     * @param event the message event
+     */
     private void onMessageReceived(MessageEvent event) {
         String content = event.getMessage().getContent();
         String[] args = content.split(" ");
@@ -70,6 +77,7 @@ public class CommandHandler {
             return;
         }
         String command = arguments.get(0).substring(1);
+        arguments = parseArguments(String.join(" ", arguments));
         arguments.remove(0);
         callCommand(event, command, arguments);
     }
@@ -105,6 +113,30 @@ public class CommandHandler {
             String incidentId = IncidentUtils.report(message, logger, e);
             channel.sendMessage(I18n.get("command.error.internal_error", incidentId, command));
         }
+    }
 
+    /**
+     * Parse a command, when arguments between quotes, parse as one argument..
+     *
+     * @param command the command to parse
+     * @return the parsed command arguments
+     */
+    private List<String> parseArguments(String command) {
+        List<String> matchList = new ArrayList<>();
+        Pattern regex = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
+        Matcher regexMatcher = regex.matcher(command);
+        while (regexMatcher.find()) {
+            if (regexMatcher.group(1) != null) {
+                // Add double-quoted string without the quotes
+                matchList.add(regexMatcher.group(1));
+            } else if (regexMatcher.group(2) != null) {
+                // Add single-quoted string without the quotes
+                matchList.add(regexMatcher.group(2));
+            } else {
+                // Add unquoted word
+                matchList.add(regexMatcher.group());
+            }
+        }
+        return matchList;
     }
 }

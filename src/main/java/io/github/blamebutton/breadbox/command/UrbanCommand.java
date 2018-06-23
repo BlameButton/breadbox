@@ -53,8 +53,7 @@ public class UrbanCommand implements ICommand {
                 channel.sendMessage(builder.build());
             });
         } else {
-            RequestBuffer.request(() ->
-            {
+            RequestBuffer.request(() -> {
                 String notFoundMessage = I18n.get("command.urban.no_results");
                 return channel.sendMessage(String.format(notFoundMessage, term));
             });
