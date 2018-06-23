@@ -41,7 +41,7 @@ public class StrawpollCommand implements ICommand {
     @Override
     public Options getOptions() {
         Options options = new Options();
-        options.addOption("o", true, "Option");
+        options.addOption("o", true, "Add an option to the strawpoll");
         return options;
     }
 }
