@@ -49,8 +49,7 @@ public class CommandHandler {
     private void messageReceived(MessageEvent event) {
         String content = event.getMessage().getContent();
         String[] args = content.split(" ");
-        char prefix = args[0].charAt(0);
-        boolean isCommand = args[0].length() > 1 && COMMAND_PREFIXES.contains(prefix);
+        boolean isCommand = args[0].length() > 1 && COMMAND_PREFIXES.contains(args[0].charAt(0));
         if (isCommand) {
             handleCommand(event, args);
             return;
