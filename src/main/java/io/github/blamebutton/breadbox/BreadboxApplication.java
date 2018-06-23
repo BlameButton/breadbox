@@ -97,7 +97,7 @@ public class BreadboxApplication {
      * @param klass   the command instance
      */
     public void registerCommand(String command, ICommand klass) {
-        if (klass == null || klass.getUsage() == null || klass.getDescription() == null) {
+        if (klass == null || klass.getDescription() == null) {
             throw new IllegalArgumentException("Command usage and description cannot be null.");
         }
         commands.put(command, klass);
