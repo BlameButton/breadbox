@@ -37,16 +37,16 @@ public class CommandHandler {
     @SuppressWarnings("unused")
     @EventSubscriber
     public void handle(MessageReceivedEvent event) {
-        messageReceived(event);
+        onMessageReceived(event);
     }
 
     @SuppressWarnings("unused")
     @EventSubscriber
     public void handle(MessageEditEvent event) {
-        messageReceived(event);
+        onMessageReceived(event);
     }
 
-    private void messageReceived(MessageEvent event) {
+    private void onMessageReceived(MessageEvent event) {
         String content = event.getMessage().getContent();
         String[] args = content.split(" ");
         boolean isCommand = args[0].length() > 0 && COMMAND_PREFIXES.contains(args[0].charAt(0));
