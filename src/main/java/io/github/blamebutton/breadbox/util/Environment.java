@@ -17,7 +17,7 @@ public enum Environment {
     public static Environment find(String text) {
         if (text == null) return LOCAL;
         return Arrays.stream(values())
-                .filter(environment -> text.equals(environment.text))
+                .filter(environment -> environment.text.equals(text))
                 .findFirst().orElse(LOCAL);
     }
 }
