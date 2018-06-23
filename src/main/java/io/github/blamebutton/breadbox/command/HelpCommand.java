@@ -18,6 +18,7 @@ import sx.blah.discord.util.RequestBuffer;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -58,20 +59,22 @@ public class HelpCommand implements ICommand {
      * @return the embed builder
      */
     private EmbedObject buildEmbedObject(List<String> args) {
-        EmbedBuilder builder;
+        EmbedBuilder builder = new EmbedBuilder();
         if (args.size() > 0) {
             String command = args.get(0);
             ICommand cmd = BreadboxApplication.instance.getCommand(command);
             HelpFormatter formatter = new HelpFormatter();
-            StringWriter out = new StringWriter();
-            formatter.printHelp(new PrintWriter(out), 100, command, cmd.getDescription(), cmd.getOptions(), 2, 4, "");
-            builder = new EmbedBuilder()
-                    .withTitle(I18n.get("command.help.single.embed.title", command));
-//            builder.appendField(I18n.get("command.help.single.usage_field", command, cmd.getUsage()), cmd.getDescription(), true);
-            builder.withDescription("`" + out.toString() + "`");
+            StringWriter usageWriter = new StringWriter();
+            StringWriter optionsWriter = new StringWriter();
+            formatter.printUsage(new PrintWriter(usageWriter), 200, command, cmd.getOptions());
+            String usage = cmd.getUsage() != null ? command + " " + cmd.getUsage() : usageWriter.toString();
+            formatter.printOptions(new PrintWriter(optionsWriter), 80, cmd.getOptions(), 1, 2);
+            builder.withTitle(I18n.get("command.help.single.embed.title", command))
+                    .withDescription(MessageFormat.format("{0}\n\n", cmd.getDescription()))
+                    .appendDescription(MessageFormat.format("```{0}```\n", usage))
+                    .appendDescription("```" + optionsWriter.toString() + "```");
         } else {
-            builder = new EmbedBuilder()
-                    .withTitle(I18n.get("command.help.embed.title"))
+            builder.withTitle(I18n.get("command.help.embed.title"))
                     .withDescription(I18n.get("command.help.embed.description"));
             BreadboxApplication.instance.getCommands().forEach((command, instance) -> {
                 String usage = String.format("%s %s", command, instance.getUsage());

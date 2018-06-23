@@ -2,6 +2,7 @@ package io.github.blamebutton.breadbox.command;
 
 import io.github.blamebutton.breadbox.util.I18n;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class StrawpollCommand implements ICommand {
 
     @Override
     public String getUsage() {
-        return I18n.get("command.strawpoll.usage");
+        return null;
     }
 
     @Override
@@ -55,8 +56,8 @@ public class StrawpollCommand implements ICommand {
     @Override
     public Options getOptions() {
         Options options = new Options();
-        options.addOption("t", true, "Title for this strawpoll");
-        options.addOption("o", true, "Add an option to the strawpoll");
+        options.addOption(Option.builder("t").argName("title").hasArg(true).desc("Title for this strawpoll").build());
+        options.addOption(Option.builder("o").argName("option").hasArg(true).desc("Add an option to the strawpoll").build());
         return options;
     }
 }
