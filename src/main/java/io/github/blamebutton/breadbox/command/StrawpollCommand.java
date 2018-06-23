@@ -23,6 +23,7 @@ public class StrawpollCommand implements ICommand {
     @Override
     public void handle(IMessage message, CommandLine commandLine) {
         message.getChannel().sendMessage("got it");
+        logger.debug(Arrays.toString(commandLine.getOptionValues('o')));
         logger.debug(Arrays.toString(commandLine.getArgList().toArray()));
         logger.debug(getOptions().toString());
     }
@@ -40,7 +41,7 @@ public class StrawpollCommand implements ICommand {
     @Override
     public Options getOptions() {
         Options options = new Options();
-        options.addOption("o", true, "Help");
+        options.addOption("o", true, "Option");
         return options;
     }
 }
