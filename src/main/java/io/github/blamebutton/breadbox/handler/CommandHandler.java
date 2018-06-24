@@ -123,7 +123,8 @@ public class CommandHandler {
      */
     private List<String> parseArguments(String command) {
         List<String> matchList = new ArrayList<>();
-        Pattern regex = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
+        String quotesRegex = "[^\\s\"']+|\"([^\"]*)\"|'([^']*)'";
+        Pattern regex = Pattern.compile(quotesRegex);
         Matcher regexMatcher = regex.matcher(command);
         while (regexMatcher.find()) {
             if (regexMatcher.group(1) != null) {
