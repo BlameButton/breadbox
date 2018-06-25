@@ -2,6 +2,7 @@ package io.github.blamebutton.breadbox;
 
 import io.github.blamebutton.breadbox.command.ICommand;
 import io.github.blamebutton.breadbox.handler.CommandHandler;
+import io.github.blamebutton.breadbox.handler.GitRepoHandler;
 import io.github.blamebutton.breadbox.handler.ReadyEventHandler;
 import io.github.blamebutton.breadbox.util.Environment;
 import sx.blah.discord.api.IDiscordClient;
@@ -86,6 +87,7 @@ public class BreadboxApplication {
         if (client != null) {
             EventDispatcher dispatcher = client.getDispatcher();
             dispatcher.registerListener(new ReadyEventHandler());
+            dispatcher.registerListener(new GitRepoHandler());
             dispatcher.registerListener(commandHandler);
         }
     }

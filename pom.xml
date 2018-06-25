@@ -60,6 +60,11 @@
             <version>RELEASE</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.linkedin.urls</groupId>
+            <artifactId>url-detector</artifactId>
+            <version>0.1.17</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>breadbox</finalName>
