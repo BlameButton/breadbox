@@ -1,19 +1,22 @@
 package io.github.blamebutton.breadbox.handler;
 
 import io.github.blamebutton.breadbox.BreadboxApplication;
-import io.github.blamebutton.breadbox.command.BreadboxCommand;
+import io.github.blamebutton.breadbox.command.ICommand;
+import io.github.blamebutton.breadbox.util.I18n;
+import io.github.blamebutton.breadbox.util.IncidentUtils;
+import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEditEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.util.RequestBuffer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 
 /**
  * Handles everything related to messages being received.
@@ -22,39 +25,38 @@ public class CommandHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandHandler.class);
 
-    private static final String commandPrefix = ".b";
-    private static final String testChannel = "breadbot-test-spam";
+    private static final List<Character> COMMAND_PREFIXES = Arrays.asList('?', '\u00bf');
+
+    private final CommandLineParser parser = new DefaultParser();
 
     /**
      * Handle the receiving of a message.
      *
      * @param event the message received event
      */
-    @EventSubscriber
     @SuppressWarnings("unused")
+    @EventSubscriber
     public void handle(MessageReceivedEvent event) {
         messageReceived(event);
     }
 
-    @EventSubscriber
     @SuppressWarnings("unused")
+    @EventSubscriber
     public void handle(MessageEditEvent event) {
         messageReceived(event);
     }
 
     private void messageReceived(MessageEvent event) {
-        if (!event.getChannel().isPrivate() && !testChannel.equals(event.getChannel().getName())) {
-            return;
-        }
         String content = event.getMessage().getContent();
         String[] args = content.split(" ");
-        boolean isCommand = commandPrefix.equals(args[0]);
+        char prefix = args[0].charAt(0);
+        boolean isCommand = args[0].length() > 1 && COMMAND_PREFIXES.contains(prefix);
         if (isCommand) {
             handleCommand(event, args);
             return;
         }
         String displayName = event.getAuthor().getName();
-        logger.debug("User: {}, message: {}: {}", displayName, event.getMessageID(), event.getMessage().getContent());
+        logger.debug("User: {}, message: {}: {}", displayName, event.getMessageID(), content);
     }
 
     /**
@@ -65,11 +67,11 @@ public class CommandHandler {
      */
     private void handleCommand(MessageEvent event, String[] args) {
         List<String> arguments = new ArrayList<>(Arrays.asList(args));
-        if (arguments.size() < 2) {
+        if (arguments.size() < 1) {
             return;
         }
-        String command = arguments.get(1);
-        IntStream.of(0, 0).forEach(arguments::remove);
+        String command = arguments.get(0).substring(1);
+        arguments.remove(0);
         callCommand(event, command, arguments);
     }
 
@@ -81,15 +83,29 @@ public class CommandHandler {
      * @param arguments the arguments for the command
      */
     private void callCommand(MessageEvent event, String command, List<String> arguments) {
-        BreadboxCommand cmd = BreadboxApplication.instance.getCommand(command);
+        ICommand cmd = BreadboxApplication.instance.getCommand(command);
+        IChannel channel = event.getChannel();
         if (cmd == null) {
             RequestBuffer.request(() -> {
-                String message = String.format("Command `%s` does not exist.", command);
-                event.getChannel().sendMessage(message);
+                String message = I18n.get("command.not_exist", command);
+                channel.sendMessage(message);
             });
             return;
         }
         logger.debug("Command '{}' arguments: {}", command, Arrays.toString(arguments.toArray()));
-        cmd.handle(event.getMessage(), arguments);
+        try {
+            Options options = cmd.getOptions();
+            String[] args = arguments.toArray(new String[]{});
+            CommandLine commandLine = parser.parse(options, args);
+            cmd.handle(event.getMessage(), commandLine);
+        } catch (MissingArgumentException e) {
+            String message = I18n.get("command.error.missing_argument", command, e.getOption().getOpt());
+            channel.sendMessage(message);
+        } catch (ParseException e) {
+            String message = I18n.get("command.error.not_parsed", command);
+            String incidentId = IncidentUtils.report(message, logger, e);
+            channel.sendMessage(I18n.get("command.error.internal_error", incidentId, command));
+        }
+
     }
 }

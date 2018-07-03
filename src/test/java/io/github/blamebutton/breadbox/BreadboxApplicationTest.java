@@ -1,33 +1,19 @@
 package io.github.blamebutton.breadbox;
 
-import io.github.blamebutton.breadbox.command.BreadboxCommand;
+import io.github.blamebutton.breadbox.command.ICommand;
 import io.github.blamebutton.breadbox.util.Environment;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.NotImplementedException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.function.Executable;
 import sx.blah.discord.handle.obj.IMessage;
 
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class BreadboxApplicationTest {
-
-    private static final Logger logger = LoggerFactory.getLogger(BreadboxApplicationTest.class);
-
-    private String token;
-    private BreadboxApplication app;
-
-    @BeforeEach
-    void setUp() {
-        token = System.getenv("BREADBOX_TOKEN");
-        if (app == null) {
-            app = new BreadboxApplication(token);
-        }
-    }
+class BreadboxApplicationTest extends BaseTest {
 
     @Test
     void main() {
@@ -38,9 +24,9 @@ class BreadboxApplicationTest {
     void getCommand() {
         String commandName = "get-command-test";
 
-        app.registerCommand(commandName, new BreadboxCommand() {
+        app.registerCommand(commandName, new ICommand() {
             @Override
-            public void handle(IMessage message, List<String> args) {
+            public void handle(IMessage message, CommandLine commandLine) {
             }
 
             @Override
@@ -50,10 +36,15 @@ class BreadboxApplicationTest {
 
             @Override
             public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Options getOptions() {
                 return null;
             }
         });
-        BreadboxCommand command = app.getCommand(commandName);
+        ICommand command = app.getCommand(commandName);
         assertNotNull(command);
         assertEquals(command.getUsage(), "usage");
     }
@@ -62,8 +53,28 @@ class BreadboxApplicationTest {
     void getCommands() {
         String commandName = "get-commands-test";
 
-        app.registerCommand(commandName, null);
-        Map<String, BreadboxCommand> commands = app.getCommands();
+        app.registerCommand(commandName, new ICommand() {
+            @Override
+            public void handle(IMessage message, CommandLine commandLine) {
+                /* Empty body */
+            }
+
+            @Override
+            public String getUsage() {
+                return "usage";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Options getOptions() {
+                return new Options();
+            }
+        });
+        Map<String, ICommand> commands = app.getCommands();
         boolean contains = commands.containsKey(commandName);
         assertTrue(contains);
     }
@@ -74,10 +85,35 @@ class BreadboxApplicationTest {
 
     @Test
     void registerCommand() {
-        String commandName = "register-command-test";
-        app.registerCommand(commandName, new BreadboxCommand() {
+        /* Assign*/
+        String commandName1 = "register-command-test1";
+        String commandName2 = "register-command-test2";
+        Executable registerCommand = () -> app.registerCommand(commandName2, new ICommand() {
             @Override
-            public void handle(IMessage message, List<String> args) {
+            public void handle(IMessage message, CommandLine commandLine) {
+                /* Empty body */
+            }
+
+            @Override
+            public String getUsage() {
+                return null;
+            }
+
+            @Override
+            public String getDescription() {
+                return null;
+            }
+
+            @Override
+            public Options getOptions() {
+                return null;
+            }
+        });
+
+        /* Act */
+        app.registerCommand(commandName1, new ICommand() {
+            @Override
+            public void handle(IMessage message, CommandLine commandLine) {
                 throw new NotImplementedException("Not implemented.");
             }
 
@@ -90,12 +126,19 @@ class BreadboxApplicationTest {
             public String getDescription() {
                 return "Command for testing purposes.";
             }
+
+            @Override
+            public Options getOptions() {
+                return null;
+            }
         });
+        Map<String, ICommand> commands = app.getCommands();
 
-        Map<String, BreadboxCommand> commands = app.getCommands();
+        boolean contains = commands.containsKey(commandName1);
+        ICommand command = commands.get(commandName1);
 
-        boolean contains = commands.containsKey(commandName);
-        BreadboxCommand command = commands.get(commandName);
+        /* Assert */
+        assertThrows(IllegalArgumentException.class, registerCommand);
         assertTrue(contains);
         assertEquals(command.getUsage(), "test-command <arg> [arg]");
         assertEquals(command.getDescription(), "Command for testing purposes.");

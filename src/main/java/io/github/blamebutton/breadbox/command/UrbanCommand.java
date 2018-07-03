@@ -2,11 +2,16 @@ package io.github.blamebutton.breadbox.command;
 
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import io.github.blamebutton.breadbox.util.I18n;
+import io.github.blamebutton.breadbox.util.IncidentUtils;
 import io.github.blamebutton.breadbox.util.UrlUtil;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RequestBuffer;
@@ -14,60 +19,78 @@ import sx.blah.discord.util.RequestBuffer;
 import java.awt.*;
 import java.util.List;
 
-public class UrbanCommand implements BreadboxCommand {
+public class UrbanCommand implements ICommand {
 
     private static final Logger logger = LoggerFactory.getLogger(UrbanCommand.class);
-    private static final String URBAN_SEARCH_URL = "https://api.urbandictionary.com/v0/define?term=%s";
-    private final String thumbnail = "https://cdn.discordapp.com/attachments/456867763516866570/456899795207061530/" +
-            "logo-1b439b7fa6572b659fbef161d8946372f472ef8e7169db1e47d21c91b410b918.png";
+    private static final String THUMBNAIL = I18n.get("url.urban_icon");
 
     @Override
-    public void handle(IMessage message, List<String> args) {
+    public void handle(IMessage message, CommandLine commandLine) {
+        List<String> args = commandLine.getArgList();
+        IChannel channel = message.getChannel();
         if (args.size() < 1) {
             RequestBuffer.request(() -> {
-                message.getChannel().sendMessage("A word / search term is required.");
+                channel.sendMessage(I18n.get("command.urban.term_required"));
             });
             return;
         }
+        String term = String.join(" ", args);
+        JSONArray list = getTermList(term);
+        if (list != null && list.length() > 0) {
+            RequestBuffer.request(() -> {
+                JSONObject response = list.getJSONObject(0);
+                /* Get all the needed fields from the response */
+                String definition = response.getString("definition");
+                String example = response.getString("example");
+                String permalink = response.getString("permalink");
+                EmbedBuilder builder = new EmbedBuilder();
+                builder.withColor(Color.decode("#1D2439"))
+                        .withThumbnail(THUMBNAIL)
+                        .withTitle(I18n.get("command.urban.embed.title", term))
+                        .withDescription(definition)
+                        .withUrl(permalink)
+                        .withFooterText(I18n.get("command.urban.embed.footer_text", example));
+                channel.sendMessage(builder.build());
+            });
+        } else {
+            RequestBuffer.request(() ->
+            {
+                String notFoundMessage = I18n.get("command.urban.no_results");
+                return channel.sendMessage(String.format(notFoundMessage, term));
+            });
+        }
+    }
+
+    /**
+     * @param term the term to search for
+     * @return the json array with all terms that were found, returns null when there was an exception
+     */
+    private JSONArray getTermList(String term) {
+        String url = I18n.get("url.urban_search", UrlUtil.encode(term));
         try {
-            String term = String.join(" ", args);
-            String url = String.format(URBAN_SEARCH_URL, UrlUtil.encode(term));
-            JSONArray list = Unirest.get(url)
+            return Unirest.get(url)
                     .asJson()
                     .getBody()
                     .getObject()
                     .getJSONArray("list");
-            if (list.length() > 0) {
-                RequestBuffer.request(() -> {
-                    JSONObject response = list.getJSONObject(0);
-                    String definition = response.getString("definition");
-                    String example = response.getString("example");
-                    String permalink = response.getString("permalink");
-                    EmbedBuilder embed = new EmbedBuilder()
-                            .withColor(Color.decode("#1D2439"))
-                            .withThumbnail(thumbnail)
-                            .withTitle(String.format("Urban Definition: %s", term))
-                            .withDescription(definition)
-                            .withUrl(permalink)
-                            .withFooterText("Example: " + example);
-                    message.getChannel().sendMessage(embed.build());
-                });
-            } else {
-                RequestBuffer.request(() ->
-                        message.getChannel().sendMessage(String.format("Search term `%s` did not yield any results.", term)));
-            }
         } catch (UnirestException e) {
-            logger.error("Error occured while fetching urban definition", e);
+            IncidentUtils.report(I18n.get("command.urban.fetch_exception"), logger, e);
+            return null;
         }
     }
 
     @Override
     public String getUsage() {
-        return "<word / search term>";
+        return I18n.get("command.urban.usage");
     }
 
     @Override
     public String getDescription() {
-        return "Searches the [urban dictionary](https://urbandictionary.com/)";
+        return I18n.get("command.urban.description");
+    }
+
+    @Override
+    public Options getOptions() {
+        return new Options();
     }
 }

@@ -1,0 +1,22 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="JUnit5: All Tests" type="JUnit" factoryName="JUnit">
+    <module name="breadbox" />
+    <extension name="coverage" runner="jacoco">
+      <pattern>
+        <option name="PATTERN" value="io.github.blamebutton.breadbox.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <option name="PACKAGE_NAME" value="io.github.blamebutton.breadbox" />
+    <option name="MAIN_CLASS_NAME" value="" />
+    <option name="METHOD_NAME" value="" />
+    <option name="TEST_OBJECT" value="package" />
+    <option name="PARAMETERS" value="" />
+    <envs>
+      <env name="BREADBOX_TOKEN" value="NDU2ODA1NTI1MjU5MTU3NTE2.DgURGg.4vVXY14eENPeoJd0TZPO-7T8xos" />
+    </envs>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

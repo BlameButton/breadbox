@@ -1,11 +1,12 @@
 package io.github.blamebutton.breadbox.util;
 
+import io.github.blamebutton.breadbox.BaseTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-class UrlUtilTest {
+class UrlUtilTest extends BaseTest {
 
     @Test
     void encodeDefaultCharset() {

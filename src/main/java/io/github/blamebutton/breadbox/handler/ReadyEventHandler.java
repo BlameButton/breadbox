@@ -2,7 +2,7 @@ package io.github.blamebutton.breadbox.handler;
 
 import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.command.HelpCommand;
-import io.github.blamebutton.breadbox.command.RedditCommand;
+import io.github.blamebutton.breadbox.command.StrawpollCommand;
 import io.github.blamebutton.breadbox.command.UrbanCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ import sx.blah.discord.util.RequestBuffer;
 public class ReadyEventHandler implements IListener<ReadyEvent> {
 
     private static Logger logger = LoggerFactory.getLogger(ReadyEventHandler.class);
-    private final String name = "BreadBox";
+    private static final String name = "BreadBox";
 
     @Override
     public void handle(ReadyEvent event) {
@@ -30,7 +30,7 @@ public class ReadyEventHandler implements IListener<ReadyEvent> {
             logger.debug("Name already matches.");
         }
         RequestBuffer.request(() ->
-                client.changePresence(StatusType.ONLINE, ActivityType.WATCHING, "your nudes."));
+                client.changePresence(StatusType.ONLINE, ActivityType.WATCHING, "your nudes (?help)"));
         registerCommands();
     }
 
@@ -41,6 +41,6 @@ public class ReadyEventHandler implements IListener<ReadyEvent> {
         BreadboxApplication instance = BreadboxApplication.instance;
         instance.registerCommand("help", new HelpCommand());
         instance.registerCommand("urban", new UrbanCommand());
-        instance.registerCommand("reddit", new RedditCommand());
+        instance.registerCommand("poll", StrawpollCommand.class);
     }
 }

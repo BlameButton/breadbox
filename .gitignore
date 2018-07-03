@@ -1,6 +1,9 @@
 .idea/*
-!.idea/runConfigurations/*
+!.idea/runConfigurations
 !.idea/compiler.xml
 !.idea/vcs.xml
-/target/*
+target/*
 *.iml
+.classpath
+.project
+.settings/*

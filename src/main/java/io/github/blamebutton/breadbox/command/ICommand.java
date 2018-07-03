@@ -1,21 +1,21 @@
 package io.github.blamebutton.breadbox.command;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
 import sx.blah.discord.handle.obj.IMessage;
-
-import java.util.List;
 
 /**
  * Interface for any command.
  */
-public interface BreadboxCommand {
+public interface ICommand {
 
     /**
      * Handle the execution of a command.
      *
-     * @param message the message object
-     * @param args    all arguments for the command
+     * @param message     message object that called the command
+     * @param commandLine command line instance
      */
-    void handle(IMessage message, List<String> args);
+    void handle(IMessage message, CommandLine commandLine);
 
     /**
      * Get the usage of this command
@@ -30,4 +30,11 @@ public interface BreadboxCommand {
      * @return the description
      */
     String getDescription();
+
+    /**
+     * Get the options of this command.
+     *
+     * @return the options
+     */
+    Options getOptions();
 }

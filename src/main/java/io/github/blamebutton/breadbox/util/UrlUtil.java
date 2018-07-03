@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-public class UrlUtil {
+public final class UrlUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(UrlUtil.class);
 
@@ -38,7 +38,7 @@ public class UrlUtil {
         try {
             return URLEncoder.encode(url, charset);
         } catch (UnsupportedEncodingException e) {
-            logger.error("Unsupported encoding charset found", e);
+            logger.error(I18n.get("unsupported.charset"), e);
             return null;
         }
     }

@@ -1,6 +1,6 @@
 package io.github.blamebutton.breadbox;
 
-import io.github.blamebutton.breadbox.command.BreadboxCommand;
+import io.github.blamebutton.breadbox.command.ICommand;
 import io.github.blamebutton.breadbox.handler.CommandHandler;
 import io.github.blamebutton.breadbox.handler.ReadyEventHandler;
 import io.github.blamebutton.breadbox.util.Environment;
@@ -15,9 +15,15 @@ public class BreadboxApplication {
     public static BreadboxApplication instance;
 
     private final String token;
-    private final Map<String, BreadboxCommand> commands = new HashMap<>();
+    private final Map<String, ICommand> commands;
     private Environment environment;
     private IDiscordClient client;
+    private CommandHandler commandHandler;
+
+    {
+        commands = new HashMap<>();
+        commandHandler = new CommandHandler();
+    }
 
     private BreadboxApplication() {
         this(System.getenv("BREADBOX_TOKEN"));
@@ -52,7 +58,7 @@ public class BreadboxApplication {
      * @param command the command name
      * @return the command instance
      */
-    public BreadboxCommand getCommand(String command) {
+    public ICommand getCommand(String command) {
         return commands.get(command);
     }
 
@@ -61,7 +67,7 @@ public class BreadboxApplication {
      *
      * @return all the commands
      */
-    public Map<String, BreadboxCommand> getCommands() {
+    public Map<String, ICommand> getCommands() {
         return commands;
     }
 
@@ -80,12 +86,37 @@ public class BreadboxApplication {
         if (client != null) {
             EventDispatcher dispatcher = client.getDispatcher();
             dispatcher.registerListener(new ReadyEventHandler());
-            dispatcher.registerListener(new CommandHandler());
+            dispatcher.registerListener(commandHandler);
         }
     }
 
-    public void registerCommand(String command, BreadboxCommand klass) {
+    /**
+     * Register a command using an instance.
+     *
+     * @param command the command name
+     * @param klass   the command instance
+     */
+    public void registerCommand(String command, ICommand klass) {
+        if (klass == null || klass.getUsage() == null || klass.getDescription() == null) {
+            throw new IllegalArgumentException("Command usage and description cannot be null.");
+        }
         commands.put(command, klass);
+    }
+
+    /**
+     * Register a command using it's class, constructor must not be private and not have any paramaters.
+     *
+     * @param command the command name
+     * @param klass   the command class
+     * @param <T>     the type of the command
+     */
+    public <T extends ICommand> void registerCommand(String command, Class<T> klass) {
+        try {
+            T cmdInstance = klass.getConstructor().newInstance();
+            registerCommand(command, cmdInstance);
+        } catch (ReflectiveOperationException e) {
+            e.printStackTrace();
+        }
     }
 
     public IDiscordClient getClient() {
@@ -94,5 +125,9 @@ public class BreadboxApplication {
 
     public Environment getEnvironment() {
         return environment;
+    }
+
+    public CommandHandler getCommandHandler() {
+        return commandHandler;
     }
 }
