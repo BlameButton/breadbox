@@ -3,6 +3,7 @@ package io.github.blamebutton.breadbox.command;
 import org.apache.commons.cli.CommandLine;
 import sx.blah.discord.handle.obj.IMessage;
 
+@BreadboxCommand("reddit")
 public class RedditCommand implements ICommand {
 
     @Override

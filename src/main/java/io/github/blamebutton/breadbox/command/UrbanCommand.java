@@ -18,6 +18,7 @@ import sx.blah.discord.util.RequestBuffer;
 import java.awt.*;
 import java.util.List;
 
+@BreadboxCommand("urban")
 public class UrbanCommand implements ICommand {
 
     private static final Logger logger = LoggerFactory.getLogger(UrbanCommand.class);
