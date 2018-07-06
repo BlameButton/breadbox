@@ -4,7 +4,6 @@ import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.util.Environment;
 import io.github.blamebutton.breadbox.util.I18n;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.handle.obj.IChannel;
@@ -75,10 +74,5 @@ public class HelpCommand implements ICommand {
     @Override
     public String getDescription() {
         return I18n.get("command.help.description");
-    }
-
-    @Override
-    public Options getOptions() {
-        return new Options();
     }
 }

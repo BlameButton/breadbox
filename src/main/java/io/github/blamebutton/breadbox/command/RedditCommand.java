@@ -1,7 +1,6 @@
 package io.github.blamebutton.breadbox.command;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import sx.blah.discord.handle.obj.IMessage;
 
 public class RedditCommand implements ICommand {
@@ -19,10 +18,5 @@ public class RedditCommand implements ICommand {
     @Override
     public String getDescription() {
         return "A command for retreiving info from reddit (subreddit, post, user)";
-    }
-
-    @Override
-    public Options getOptions() {
-        return null;
     }
 }
