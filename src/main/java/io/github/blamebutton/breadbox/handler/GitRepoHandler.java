@@ -62,15 +62,14 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
 
             if ("github.com".equals(host)) {
                 handleGithubUrl(event.getChannel(), pathSections);
-            }
-            else if ("gitlab.com".equals(host)) {
+            } else if ("gitlab.com".equals(host)) {
                 handleGitlabUrl(event.getChannel(), pathSections);
             }
         });
     }
 
     private void handleGithubUrl(IChannel channel, LinkedList<String> pathSections) {
-        JSONObject object = getGithubRepo(pathSections.get(0), pathSections.get(1));
+        JSONObject object = getGithubrepoInfo(pathSections.get(0), pathSections.get(1));
 
         if (object == null) {
             return;
@@ -99,7 +98,7 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
 
     }
 
-    private JSONObject getGithubRepo(String userName, String repoName) {
+    private JSONObject getGithubrepoInfo(String userName, String repoName) {
         String url = String.format("%s%s/%s", GITHUB_API_BASE_URL, userName, repoName);
         try {
             return Unirest.get(url)
@@ -125,7 +124,7 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
         Embed.EmbedField watchField = new Embed.EmbedField("Watching", String.valueOf(repoInfo.watching), true);
         Embed.EmbedField forksField = new Embed.EmbedField("Forks", String.valueOf(repoInfo.forks), true);
         Embed.EmbedField openIssuesField = new Embed.EmbedField("Open issues", String.valueOf(repoInfo.openIssues), true);
-        Embed.EmbedField pullRequestsField = new Embed.EmbedField("Pull requests", String.valueOf(repoInfo.pullRequests), true);
+        Embed.EmbedField licenseField = new Embed.EmbedField("License", repoInfo.license, true);
         Embed.EmbedField languageField = new Embed.EmbedField("Language", repoInfo.language, true);
 
         builder.withColor(Color.decode("#1D2439"))
@@ -137,16 +136,16 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
                 .appendField(starField)
                 .appendField(watchField)
                 .appendField(forksField)
-                .appendField(openIssuesField)
-                .appendField(pullRequestsField)
-                .appendField(languageField);
+                .appendField(openIssuesField);
+
+        if(repoInfo.license != null) {
+            builder.appendField(licenseField);
+        }
+
+        builder.appendField(languageField);
 
         if (repoInfo.icon != null) {
             builder.withImage(repoInfo.icon);
-        }
-
-        if (repoInfo.license != null) {
-            builder.withFooterText(String.format("Licence: %s", repoInfo.license));
         }
 
         RequestBuffer.request(() -> {
