@@ -6,7 +6,6 @@ import io.github.blamebutton.breadbox.util.I18n;
 import io.github.blamebutton.breadbox.util.IncidentUtils;
 import io.github.blamebutton.breadbox.util.UrlUtil;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -87,10 +86,5 @@ public class UrbanCommand implements ICommand {
     @Override
     public String getDescription() {
         return I18n.get("command.urban.description");
-    }
-
-    @Override
-    public Options getOptions() {
-        return new Options();
     }
 }

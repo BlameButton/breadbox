@@ -36,5 +36,7 @@ public interface ICommand {
      *
      * @return the options
      */
-    Options getOptions();
+    default Options getOptions() {
+        return null;
+    }
 }

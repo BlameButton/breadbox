@@ -95,6 +95,9 @@ public class CommandHandler {
         logger.debug("Command '{}' arguments: {}", command, Arrays.toString(arguments.toArray()));
         try {
             Options options = cmd.getOptions();
+            if (options == null) {
+                options = new Options();
+            }
             String[] args = arguments.toArray(new String[]{});
             CommandLine commandLine = parser.parse(options, args);
             cmd.handle(event.getMessage(), commandLine);
@@ -106,6 +109,5 @@ public class CommandHandler {
             String incidentId = IncidentUtils.report(message, logger, e);
             channel.sendMessage(I18n.get("command.error.internal_error", incidentId, command));
         }
-
     }
 }
