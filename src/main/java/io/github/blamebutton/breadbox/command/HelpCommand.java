@@ -29,9 +29,10 @@ public class HelpCommand implements ICommand {
             return;
         }
         List<String> args = commandLine.getArgList();
-        EmbedBuilder builder = buildEmbedObject(args);
+        String command = args.size() > 0 ? args.get(0) : null;
+        EmbedBuilder builder = buildEmbedObject(command);
         if (builder == null) {
-            sendUnknownCommandMessage(message);
+            sendUnknownCommandMessage(message, command);
             return;
         }
         sendRespondingMessage(message, builder);
@@ -62,10 +63,10 @@ public class HelpCommand implements ICommand {
      *
      * @param message the message from the help message
      */
-    private void sendUnknownCommandMessage(IMessage message) {
+    private void sendUnknownCommandMessage(IMessage message, String command) {
         RequestBuffer.request(() -> {
             IChannel channel = getHelpChannel(message);
-            channel.sendMessage(I18n.get("command.help.single.not_found"));
+            channel.sendMessage(I18n.get("command.help.single.not_found", command));
         });
     }
 
@@ -85,11 +86,13 @@ public class HelpCommand implements ICommand {
         });
     }
 
-    private EmbedBuilder buildEmbedObject(List<String> args) {
+    private EmbedBuilder buildEmbedObject(String command) {
         EmbedBuilder builder;
-        if (args.size() > 0) {
-            String command = args.get(0);
+        if (command != null) {
             ICommand cmd = BreadboxApplication.instance.getCommand(command);
+            if (cmd == null) {
+                return null;
+            }
             builder = new EmbedBuilder()
                     .withTitle(I18n.get("command.help.single.embed.title", command));
             builder.appendField(I18n.get("command.help.single.usage_field", command, cmd.getUsage()), cmd.getDescription(), true);
@@ -97,9 +100,9 @@ public class HelpCommand implements ICommand {
             builder = new EmbedBuilder()
                     .withTitle(I18n.get("command.help.embed.title"))
                     .withDescription(I18n.get("command.help.embed.description"));
-            BreadboxApplication.instance.getCommands().forEach((command, instance) -> {
-                String usage = String.format("%s %s", command, instance.getUsage());
-                builder.appendField(String.format("%s: %s", command, usage), instance.getDescription(), false);
+            BreadboxApplication.instance.getCommands().forEach((commandName, instance) -> {
+                String usage = String.format("%s %s", commandName, instance.getUsage());
+                builder.appendField(String.format("%s: %s", commandName, usage), instance.getDescription(), false);
             });
         }
         return builder;

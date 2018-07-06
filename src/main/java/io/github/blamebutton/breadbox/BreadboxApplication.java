@@ -130,4 +130,8 @@ public class BreadboxApplication {
     public CommandHandler getCommandHandler() {
         return commandHandler;
     }
+
+    public boolean commandExists(String command) {
+        return getCommand(command) != null;
+    }
 }
