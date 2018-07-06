@@ -17,6 +17,7 @@ import java.util.List;
 
 import static io.github.blamebutton.breadbox.BreadboxApplication.instance;
 
+@BreadboxCommand("help")
 public class HelpCommand implements ICommand {
 
     private static Logger logger = LoggerFactory.getLogger(HelpCommand.class);

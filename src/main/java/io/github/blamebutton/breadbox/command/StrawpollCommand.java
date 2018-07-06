@@ -16,6 +16,7 @@ import java.util.Arrays;
  * Usage: ?strawpoll &lt;options>
  * </pre>
  */
+@BreadboxCommand("poll")
 public class StrawpollCommand implements ICommand {
 
     private static final Logger logger = LoggerFactory.getLogger(StrawpollCommand.class);
