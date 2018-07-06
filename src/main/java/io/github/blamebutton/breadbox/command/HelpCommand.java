@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IPrivateChannel;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RequestBuffer;
@@ -30,20 +29,58 @@ public class HelpCommand implements ICommand {
             return;
         }
         List<String> args = commandLine.getArgList();
-        RequestBuffer.request(() -> {
-            EmbedBuilder builder = buildEmbedObject(args);
-            if (Environment.PRODUCTION.equals(instance.getEnvironment())) {
-                IUser author = message.getAuthor();
-                IPrivateChannel pm = message.getClient().getOrCreatePMChannel(author);
-                pm.sendMessage(builder.build());
-            } else {
-                channel.sendMessage(builder.build());
-                if (!channel.isPrivate()) {
-                    message.delete();
-                }
-            }
-        });
+        EmbedBuilder builder = buildEmbedObject(args);
+        if (builder == null) {
+            sendUnknownCommandMessage(message);
+            return;
+        }
+        sendRespondingMessage(message, builder);
         logger.debug(Arrays.toString(args.toArray()));
+    }
+
+    /**
+     * Get the help channel to which the message should be sent.
+     *
+     * @param message the message object from which the command came
+     * @return the channel to send it to
+     */
+    private IChannel getHelpChannel(IMessage message) {
+        if (message == null) {
+            return null;
+        }
+        if (Environment.PRODUCTION.equals(instance.getEnvironment())) {
+            IUser author = message.getAuthor();
+            return message.getClient().getOrCreatePMChannel(author);
+        }
+        return message.getChannel();
+    }
+
+    /**
+     * Send the message for an unknown command.
+     *
+     * @param message the message from the help message
+     */
+    private void sendUnknownCommandMessage(IMessage message) {
+        RequestBuffer.request(() -> {
+            IChannel channel = getHelpChannel(message);
+            channel.sendMessage(I18n.get("command.help.single.not_found"));
+        });
+    }
+
+    /**
+     * Send the responding message.
+     *
+     * @param message the message
+     * @param builder the builder
+     */
+    private void sendRespondingMessage(IMessage message, EmbedBuilder builder) {
+        RequestBuffer.request(() -> {
+            IChannel channel = getHelpChannel(message);
+            if (!channel.isPrivate()) {
+                message.delete();
+            }
+            channel.sendMessage(builder.build());
+        });
     }
 
     private EmbedBuilder buildEmbedObject(List<String> args) {
