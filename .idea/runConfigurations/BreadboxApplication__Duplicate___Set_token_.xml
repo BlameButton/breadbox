@@ -1,9 +1,9 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="BreadboxApplication" type="Application" factoryName="Application" singleton="true">
+  <configuration default="false" name="BreadboxApplication (Duplicate &amp; Set token)" type="Application" factoryName="Application" singleton="true">
     <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <envs>
-      <env name="BREADBOX_TOKEN" value="NDU2ODA1NTI1MjU5MTU3NTE2.DgRqvQ.aRa6p0Zv_g8MIIe2uVkQsRd9eLg" />
+      <env name="BREADBOX_TOKEN" value="fill this in" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="io.github.blamebutton.breadbox.BreadboxApplication" />
     <module name="breadbox" />

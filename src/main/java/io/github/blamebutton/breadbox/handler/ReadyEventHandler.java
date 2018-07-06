@@ -2,6 +2,7 @@ package io.github.blamebutton.breadbox.handler;
 
 import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.command.HelpCommand;
+import io.github.blamebutton.breadbox.command.RedditCommand;
 import io.github.blamebutton.breadbox.command.StrawpollCommand;
 import io.github.blamebutton.breadbox.command.UrbanCommand;
 import org.slf4j.Logger;
@@ -42,5 +43,6 @@ public class ReadyEventHandler implements IListener<ReadyEvent> {
         instance.registerCommand("help", new HelpCommand());
         instance.registerCommand("urban", new UrbanCommand());
         instance.registerCommand("poll", StrawpollCommand.class);
+        instance.registerCommand("reddit", RedditCommand.class);
     }
 }

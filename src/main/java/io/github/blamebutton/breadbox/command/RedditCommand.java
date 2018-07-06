@@ -1,12 +1,13 @@
 package io.github.blamebutton.breadbox.command;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
 import sx.blah.discord.handle.obj.IMessage;
 
-import java.util.List;
+public class RedditCommand implements ICommand {
 
-public class RedditCommand implements BreadboxCommand{
     @Override
-    public void handle(IMessage message, List<String> args) {
+    public void handle(IMessage message, CommandLine commandLine) {
 
     }
 
@@ -18,5 +19,10 @@ public class RedditCommand implements BreadboxCommand{
     @Override
     public String getDescription() {
         return "A command for retreiving info from reddit (subreddit, post, user)";
+    }
+
+    @Override
+    public Options getOptions() {
+        return null;
     }
 }
