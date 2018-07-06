@@ -3,17 +3,32 @@ package io.github.blamebutton.breadbox.handler;
 import com.linkedin.urls.Url;
 import com.linkedin.urls.detection.UrlDetector;
 import com.linkedin.urls.detection.UrlDetectorOptions;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import io.github.blamebutton.breadbox.util.I18n;
+import io.github.blamebutton.breadbox.util.IncidentUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.impl.obj.Embed;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.util.EmbedBuilder;
+import sx.blah.discord.util.RequestBuffer;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class GitRepoHandler implements IListener<MessageReceivedEvent> {
+
+    private static final Logger logger = LoggerFactory.getLogger(GitRepoHandler.class);
+
+
+    private static final String GITHUB_API_BASE_URL = "https://api.github.com/repos/";
 
 
     @Override
@@ -22,7 +37,7 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
         UrlDetector detector = new UrlDetector(messageContent, UrlDetectorOptions.Default);
         List<Url> urls = detector.detect();
 
-        if(urls.size() == 0) {
+        if (urls.size() == 0) {
             return;
         }
 
@@ -30,29 +45,77 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
             String host = url.getHost();
             String path = url.getPath();
 
-            if("/".equals(path)) {
+            if ("/".equals(path)) {
                 return;
             }
 
-            if("github.com".equals(host)) {
-                handleGithubUrl(event.getChannel(), messageContent);
-            } else if("gitlab.com".equals(host)) {
-                handleGitlabUrl(event.getChannel(), messageContent);
+            // Getting path sections for use with gitlab api
+            LinkedList<String> pathSections = new LinkedList<>(Arrays.asList(url.getPath().split("/")));
+
+            // Remove empty string prepended because of "/username"
+            pathSections.remove(0);
+
+
+            if (pathSections.size() != 2) {
+                return;
+            }
+
+            if ("github.com".equals(host)) {
+                handleGithubUrl(event.getChannel(), pathSections);
+            }
+            else if ("gitlab.com".equals(host)) {
+                handleGitlabUrl(event.getChannel(), pathSections);
             }
         });
     }
 
-    private void handleGithubUrl(IChannel channel, String messageContent) {
-        //TODO: Parse github url and make api call, extract data for embed
-        //TODO: Pull request count needs separate api call due to stupid api limitations
-        channel.sendMessage("Github URL handling not implemented yet");
-        throw(new NotImplementedException("Github URL handling not implemented yet"));
+    private void handleGithubUrl(IChannel channel, LinkedList<String> pathSections) {
+        JSONObject object = getGithubRepo(pathSections.get(0), pathSections.get(1));
+
+        if (object == null) {
+            return;
+        }
+
+        RepoInfo info = new RepoInfo();
+
+        info.name = object.getString("name");
+        info.description = object.getString("description");
+        info.authorName = object.getJSONObject("owner").getString("login");
+        info.authorUrl = object.getJSONObject("owner").getString("url");
+        info.authorIcon = object.getJSONObject("owner").getString("avatar_url");
+        info.stargazers = object.getInt("stargazers_count");
+        info.watching = object.getInt("watchers_count");
+        info.forks = object.getInt("forks_count");
+        info.openIssues = object.getInt("open_issues");
+        info.language = object.getString("language");
+
+
+        try {
+            info.license = object.getJSONObject("license").getString("name");
+        } catch (Exception ignored) {
+        }
+
+        sendRepoEmbed(channel, info);
+
     }
 
-    private void handleGitlabUrl(IChannel channel, String messageContent) {
+    private JSONObject getGithubRepo(String userName, String repoName) {
+        String url = String.format("%s%s/%s", GITHUB_API_BASE_URL, userName, repoName);
+        try {
+            return Unirest.get(url)
+                    .asJson()
+                    .getBody()
+                    .getObject();
+        } catch (UnirestException e) {
+            IncidentUtils.report(I18n.get("handler.gitrepo.github_fetch_exception"), logger, e);
+            return null;
+        }
+    }
+
+    private void handleGitlabUrl(IChannel channel, LinkedList<String> pathSections) {
         //TODO: Parse gitlab url and make api call, extract data for embed
         channel.sendMessage("Gitlab URL handling not implemented yet");
-        throw(new NotImplementedException("Gitlab URL handling not implemented yet"));
+        throw new NotImplementedException("Gitlab URL handling not implemented yet");
     }
 
     private void sendRepoEmbed(IChannel channel, RepoInfo repoInfo) {
@@ -71,7 +134,6 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
                 .withAuthorName(repoInfo.authorName)
                 .withAuthorIcon(repoInfo.authorIcon)
                 .withAuthorUrl(repoInfo.authorUrl)
-                .withFooterText(String.format("Licence: %s", repoInfo.license))
                 .appendField(starField)
                 .appendField(watchField)
                 .appendField(forksField)
@@ -83,8 +145,13 @@ public class GitRepoHandler implements IListener<MessageReceivedEvent> {
             builder.withImage(repoInfo.icon);
         }
 
-        channel.sendMessage(builder.build());
+        if (repoInfo.license != null) {
+            builder.withFooterText(String.format("Licence: %s", repoInfo.license));
+        }
 
+        RequestBuffer.request(() -> {
+            channel.sendMessage(builder.build());
+        });
     }
 
     private class RepoInfo {
