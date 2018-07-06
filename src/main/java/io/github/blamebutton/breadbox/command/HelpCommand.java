@@ -49,8 +49,10 @@ public class HelpCommand implements ICommand {
             return null;
         }
         if (Environment.PRODUCTION.equals(instance.getEnvironment())) {
-            IUser author = message.getAuthor();
-            return message.getClient().getOrCreatePMChannel(author);
+            return RequestBuffer.request(() -> {
+                IUser author = message.getAuthor();
+                return message.getClient().getOrCreatePMChannel(author);
+            }).get();
         }
         return message.getChannel();
     }
