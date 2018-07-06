@@ -1,9 +1,9 @@
 package io.github.blamebutton.breadbox.handler;
 
 import io.github.blamebutton.breadbox.BreadboxApplication;
-import io.github.blamebutton.breadbox.command.HelpCommand;
-import io.github.blamebutton.breadbox.command.StrawpollCommand;
-import io.github.blamebutton.breadbox.command.UrbanCommand;
+import io.github.blamebutton.breadbox.command.BreadboxCommand;
+import io.github.blamebutton.breadbox.command.ICommand;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.api.IDiscordClient;
@@ -13,10 +13,12 @@ import sx.blah.discord.handle.obj.ActivityType;
 import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.RequestBuffer;
 
+import java.util.Set;
+
 public class ReadyEventHandler implements IListener<ReadyEvent> {
 
-    private static Logger logger = LoggerFactory.getLogger(ReadyEventHandler.class);
     private static final String name = "BreadBox";
+    private static Logger logger = LoggerFactory.getLogger(ReadyEventHandler.class);
 
     @Override
     public void handle(ReadyEvent event) {
@@ -39,8 +41,21 @@ public class ReadyEventHandler implements IListener<ReadyEvent> {
      */
     private void registerCommands() {
         BreadboxApplication instance = BreadboxApplication.instance;
-        instance.registerCommand("help", new HelpCommand());
-        instance.registerCommand("urban", new UrbanCommand());
-        instance.registerCommand("poll", StrawpollCommand.class);
+        String packageName = BreadboxApplication.class.getPackage().getName();
+        Reflections reflections = new Reflections(packageName);
+        Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(BreadboxCommand.class);
+        for (Class<?> annotatedClass : annotatedClasses) {
+            try {
+                Object reflectionInstance = annotatedClass.newInstance();
+                if (reflectionInstance instanceof ICommand) {
+                    BreadboxCommand annotation = annotatedClass.getAnnotation(BreadboxCommand.class);
+                    String commandName = annotation.value();
+                    instance.registerCommand(commandName, (ICommand) reflectionInstance);
+                    logger.info("Registered command: {}", commandName);
+                }
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

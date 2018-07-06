@@ -1,12 +1,13 @@
 package io.github.blamebutton.breadbox.command;
 
+import org.apache.commons.cli.CommandLine;
 import sx.blah.discord.handle.obj.IMessage;
 
-import java.util.List;
+@BreadboxCommand("reddit")
+public class RedditCommand implements ICommand {
 
-public class RedditCommand implements BreadboxCommand{
     @Override
-    public void handle(IMessage message, List<String> args) {
+    public void handle(IMessage message, CommandLine commandLine) {
 
     }
 
