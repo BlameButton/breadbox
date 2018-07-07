@@ -1,5 +1,6 @@
 package io.github.blamebutton.breadbox.command;
 
+import io.github.blamebutton.breadbox.util.I18n;
 import org.apache.commons.cli.CommandLine;
 import sx.blah.discord.handle.obj.IMessage;
 
@@ -13,11 +14,11 @@ public class RedditCommand implements ICommand {
 
     @Override
     public String getUsage() {
-        return "sr <subreddit>, user <user>, post <post> + <hour;day;week;month;year;all>";
+        return I18n.get("command.reddit.usage");
     }
 
     @Override
     public String getDescription() {
-        return "A command for retreiving info from reddit (subreddit, post, user)";
+        return I18n.get("command.reddit.description");
     }
 }
