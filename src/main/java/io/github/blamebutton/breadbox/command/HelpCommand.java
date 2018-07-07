@@ -1,10 +1,10 @@
 package io.github.blamebutton.breadbox.command;
 
-import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.util.Environment;
 import io.github.blamebutton.breadbox.util.I18n;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.handle.obj.IChannel;
@@ -18,7 +18,6 @@ import java.io.StringWriter;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.blamebutton.breadbox.BreadboxApplication.instance;
 
@@ -100,27 +99,27 @@ public class HelpCommand implements ICommand {
      */
     private EmbedBuilder buildEmbedObject(String command) {
         EmbedBuilder builder = new EmbedBuilder();
-        if (command != null) {
-            ICommand cmd = BreadboxApplication.instance.getCommand(command);
+        if (command != null && instance.commandExists(command)) {
+            ICommand cmd = instance.getCommand(command);
             HelpFormatter formatter = new HelpFormatter();
             StringWriter usageWriter = new StringWriter();
             StringWriter optionsWriter = new StringWriter();
-            formatter.printUsage(new PrintWriter(usageWriter), 200, command, cmd.getOptions());
+            Options options = cmd.getOptions() != null ? cmd.getOptions() : new Options();
+            formatter.printUsage(new PrintWriter(usageWriter), 200, command, options);
             String usage = cmd.getUsage() != null ? command + " " + cmd.getUsage() : usageWriter.toString();
-            formatter.printOptions(new PrintWriter(optionsWriter), 80, cmd.getOptions(), 1, 2);
+            formatter.printOptions(new PrintWriter(optionsWriter), 80, options, 2, 4);
+            String[] split = optionsWriter.toString().split("\n");
             builder.withTitle(I18n.get("command.help.single.embed.title", command))
-                    .withDescription(MessageFormat.format("{0}\n\n", cmd.getDescription()))
-                    .appendDescription(MessageFormat.format("```{0}```\n", usage))
-                    .appendDescription("```" + optionsWriter.toString() + "```");
+                    .withDesc(MessageFormat.format("{0}\n\n", cmd.getDescription()))
+                    .appendDesc(MessageFormat.format("`{0}`\n\n", usage));
+            Arrays.stream(split).forEach(value -> builder.appendDesc("`" + value + "`\n"));
         } else {
             builder.withTitle(I18n.get("command.help.embed.title"))
                     .withDescription(I18n.get("command.help.embed.description"));
-            for (Map.Entry<String, ICommand> entry : BreadboxApplication.instance.getCommands().entrySet()) {
-                String commandName = entry.getKey();
-                ICommand value = entry.getValue();
+            instance.getCommands().forEach((commandName, value) -> {
                 String usage = String.format("%s %s", commandName, value.getUsage());
                 builder.appendField(String.format("%s: %s", commandName, usage), value.getDescription(), false);
-            }
+            });
         }
         return builder;
     }
