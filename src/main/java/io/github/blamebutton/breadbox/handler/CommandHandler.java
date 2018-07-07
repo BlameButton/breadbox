@@ -12,6 +12,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEditEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.RequestBuffer;
 
 import java.util.ArrayList;
@@ -54,7 +55,11 @@ public class CommandHandler {
      * @param event the message event
      */
     private void onMessageReceived(MessageEvent event) {
-        String content = event.getMessage().getContent();
+        IMessage message = event.getMessage();
+        String content = message.getContent();
+        if (content == null || content.isEmpty()) {
+            return;
+        }
         String[] args = content.split(" ");
         boolean isCommand = args[0].length() > 0 && COMMAND_PREFIXES.contains(args[0].charAt(0));
         if (isCommand) {
@@ -102,6 +107,9 @@ public class CommandHandler {
         logger.debug("Command '{}' arguments: {}", command, Arrays.toString(arguments.toArray()));
         try {
             Options options = cmd.getOptions();
+            if (options == null) {
+                options = new Options();
+            }
             String[] args = arguments.toArray(new String[]{});
             CommandLine commandLine = parser.parse(options, args);
             cmd.handle(event.getMessage(), commandLine);
