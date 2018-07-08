@@ -3,6 +3,8 @@ package io.github.blamebutton.breadbox.handler;
 import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.command.BreadboxCommand;
 import io.github.blamebutton.breadbox.command.ICommand;
+import io.github.blamebutton.breadbox.validator.CommandValidator;
+import io.github.blamebutton.breadbox.validator.IValidator;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +17,12 @@ import sx.blah.discord.util.RequestBuffer;
 
 import java.util.Set;
 
+import static io.github.blamebutton.breadbox.BreadboxApplication.instance;
+
 public class ReadyEventHandler implements IListener<ReadyEvent> {
 
     private static final String name = "BreadBox";
+    private static final String packageName = BreadboxApplication.class.getPackage().getName();
     private static Logger logger = LoggerFactory.getLogger(ReadyEventHandler.class);
 
     @Override
@@ -33,28 +38,49 @@ public class ReadyEventHandler implements IListener<ReadyEvent> {
         }
         RequestBuffer.request(() ->
                 client.changePresence(StatusType.ONLINE, ActivityType.WATCHING, "your nudes (?help)"));
-        registerCommands();
+        try {
+            registerCommands();
+            registerValidators();
+        } catch (IllegalAccessException | InstantiationException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * Register all the application commands.
      */
-    private void registerCommands() {
-        BreadboxApplication instance = BreadboxApplication.instance;
-        String packageName = BreadboxApplication.class.getPackage().getName();
+    private void registerCommands() throws IllegalAccessException, InstantiationException {
         Reflections reflections = new Reflections(packageName);
         Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(BreadboxCommand.class);
         for (Class<?> annotatedClass : annotatedClasses) {
-            try {
-                Object reflectionInstance = annotatedClass.newInstance();
-                if (reflectionInstance instanceof ICommand) {
-                    BreadboxCommand annotation = annotatedClass.getAnnotation(BreadboxCommand.class);
-                    String commandName = annotation.value();
-                    instance.registerCommand(commandName, (ICommand) reflectionInstance);
-                    logger.info("Registered command: {}", commandName);
+            Object reflectionInstance = annotatedClass.newInstance();
+            if (reflectionInstance instanceof ICommand) {
+                BreadboxCommand annotation = annotatedClass.getAnnotation(BreadboxCommand.class);
+                String commandName = annotation.value();
+                instance.registerCommand(commandName, (ICommand) reflectionInstance);
+                logger.info("Registered command: {}", commandName);
+            }
+        }
+    }
+
+    /**
+     * Register all validators for the commands.
+     */
+    private void registerValidators() throws IllegalAccessException, InstantiationException {
+        Reflections reflections = new Reflections(packageName);
+        Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(CommandValidator.class);
+        for (Class<?> validatorClass : annotatedClasses) {
+            CommandValidator annotation = validatorClass.getAnnotation(CommandValidator.class);
+            Class<? extends ICommand> command = annotation.value();
+            if (command.isAnnotationPresent(BreadboxCommand.class)) {
+                BreadboxCommand commandAnnotation = command.getAnnotation(BreadboxCommand.class);
+                Object validatorInstance = validatorClass.newInstance();
+                if (validatorInstance instanceof IValidator) {
+                    String commandName = commandAnnotation.value();
+                    String simpleName = validatorClass.getSimpleName();
+                    instance.addValidatorForCommand(((IValidator) validatorInstance), commandName);
+                    logger.info("Registered validator {} for command {}", simpleName, commandName);
                 }
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
             }
         }
     }

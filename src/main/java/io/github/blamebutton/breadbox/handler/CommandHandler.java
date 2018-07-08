@@ -1,23 +1,28 @@
 package io.github.blamebutton.breadbox.handler;
 
-import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.command.ICommand;
 import io.github.blamebutton.breadbox.util.I18n;
 import io.github.blamebutton.breadbox.util.IncidentUtils;
+import io.github.blamebutton.breadbox.validator.IValidator;
+import io.github.blamebutton.breadbox.validator.ValidationResult;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.api.events.EventSubscriber;
+import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEditEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RequestBuffer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static io.github.blamebutton.breadbox.BreadboxApplication.instance;
 
 /**
  * Handles everything related to messages being received.
@@ -88,7 +93,7 @@ public class CommandHandler {
      * @param arguments the arguments for the command
      */
     private void callCommand(MessageEvent event, String command, List<String> arguments) {
-        ICommand cmd = BreadboxApplication.instance.getCommand(command);
+        ICommand cmd = instance.getCommand(command);
         IChannel channel = event.getChannel();
         if (cmd == null) {
             RequestBuffer.request(() -> {
@@ -105,7 +110,13 @@ public class CommandHandler {
             }
             String[] args = arguments.toArray(new String[]{});
             CommandLine commandLine = parser.parse(options, args);
-            cmd.handle(event.getMessage(), commandLine);
+            List<IValidator> validators = instance.getValidatorsForCommand(command);
+            List<ValidationResult> results = getValidationResults(commandLine, validators);
+            if (results.isEmpty() && instance.getClient().isReady()) {
+                cmd.handle(event.getMessage(), commandLine);
+            } else {
+                channel.sendMessage(formatErrorMessage(command, results));
+            }
         } catch (MissingArgumentException e) {
             String message = I18n.get("command.error.missing_argument", command, e.getOption().getOpt());
             channel.sendMessage(message);
@@ -114,5 +125,42 @@ public class CommandHandler {
             String incidentId = IncidentUtils.report(message, logger, e);
             channel.sendMessage(I18n.get("command.error.internal_error", incidentId, command));
         }
+    }
+
+    /**
+     * Get all the validation results from a command line and a list of validators
+     *
+     * @param commandLine the command line to validate
+     * @param validators  the validators to use
+     * @return the validation results
+     */
+    private List<ValidationResult> getValidationResults(CommandLine commandLine, List<IValidator> validators) {
+        List<ValidationResult> results = new ArrayList<>();
+        if (!validators.isEmpty()) {
+            for (IValidator validator : validators) {
+                ValidationResult result = validator.validate(commandLine);
+                if (!result.isValid()) {
+                    results.add(result);
+                }
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Format all the validation results into an embed object
+     *
+     * @param errors the errors to format
+     * @return the formatted embed object
+     */
+    private EmbedObject formatErrorMessage(String command, List<ValidationResult> errors) {
+        EmbedBuilder builder = new EmbedBuilder();
+        builder.withTitle(I18n.get("command.validation.error.title", command));
+        for (ValidationResult error : errors) {
+            for (String errorMessage : error.getErrors()) {
+                builder.appendDesc(" - " + errorMessage + " \n");
+            }
+        }
+        return builder.build();
     }
 }

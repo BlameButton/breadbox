@@ -1,13 +1,17 @@
 package io.github.blamebutton.breadbox;
 
+import com.sun.istack.internal.NotNull;
 import io.github.blamebutton.breadbox.command.ICommand;
 import io.github.blamebutton.breadbox.handler.CommandHandler;
 import io.github.blamebutton.breadbox.handler.ReadyEventHandler;
 import io.github.blamebutton.breadbox.util.Environment;
+import io.github.blamebutton.breadbox.validator.IValidator;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BreadboxApplication {
@@ -16,12 +20,14 @@ public class BreadboxApplication {
 
     private final String token;
     private final Map<String, ICommand> commands;
+    private final Map<ICommand, List<IValidator>> validators;
     private Environment environment;
     private IDiscordClient client;
     private CommandHandler commandHandler;
 
     {
         commands = new HashMap<>();
+        validators = new HashMap<>();
         commandHandler = new CommandHandler();
     }
 
@@ -119,6 +125,36 @@ public class BreadboxApplication {
         }
     }
 
+    /**
+     * Add a validator for a command.
+     *
+     * @param validator the validator to add
+     * @param command   the command to add the validator for
+     * @param <T>       the type of validator which will be returned
+     * @return the validator that has been registered
+     */
+    public <T extends IValidator> T addValidatorForCommand(T validator, String command) {
+        if (commandExists(command)) {
+            ICommand commandInstance = getCommand(command);
+            validators.putIfAbsent(commandInstance, new ArrayList<>());
+            List<IValidator> commandValidators = validators.get(commandInstance);
+            commandValidators.add(validator);
+            return validator;
+        }
+        throw new RuntimeException(String.format("Could not add validator for command %s", command));
+    }
+
+    /**
+     * Get all validators for a specified command.
+     *
+     * @param command the command to get the validators for
+     * @return the list of validators for this command
+     */
+    @NotNull
+    public List<IValidator> getValidatorsForCommand(String command) {
+        return validators.getOrDefault(getCommand(command), new ArrayList<>());
+    }
+
     public IDiscordClient getClient() {
         return client;
     }
@@ -131,7 +167,11 @@ public class BreadboxApplication {
         return commandHandler;
     }
 
-    public boolean commandExists(String command) {
+    private boolean commandExists(String command) {
         return getCommand(command) != null;
+    }
+
+    public Map<ICommand, List<IValidator>> getValidators() {
+        return validators;
     }
 }
