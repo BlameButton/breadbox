@@ -150,7 +150,6 @@ public class BreadboxApplication {
      * @param command the command to get the validators for
      * @return the list of validators for this command
      */
-    @NotNull
     public List<IValidator> getValidatorsForCommand(String command) {
         return validators.getOrDefault(getCommand(command), new ArrayList<>());
     }
