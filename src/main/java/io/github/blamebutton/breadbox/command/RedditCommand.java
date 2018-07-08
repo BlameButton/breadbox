@@ -10,7 +10,21 @@ import sx.blah.discord.handle.obj.IMessage;
 public class RedditCommand implements ICommand {
 
     @Override
-    public void handle(IMessage message, CommandLine commandLine) {
+    public void handle(IMessage message, CommandLine cli) {
+        if (!cli.hasOption('q')) {
+            message.getChannel().sendMessage(I18n.get("command.reddit.optionqrequired"));
+        }
+        if (cli.getOptionValue('q').length() > 512) {
+            message.getChannel().sendMessage(I18n.get("command.reddit.option_q_too_long"));
+        }
+        if (cli.hasOption("tp")) {
+            String tpInput = cli.getOptionValue("tp").toLowerCase();
+            if (!tpInput.equals("sr") || !tpInput.equals("link") || !tpInput.equals("user")) {
+                message.getChannel().sendMessage(I18n.get("command.reddit.option_tp_should_be"));
+            }
+        } else {
+
+        }
     }
 
     @Override
