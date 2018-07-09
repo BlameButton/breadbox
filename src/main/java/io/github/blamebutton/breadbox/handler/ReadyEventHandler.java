@@ -3,6 +3,7 @@ package io.github.blamebutton.breadbox.handler;
 import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.command.BreadboxCommand;
 import io.github.blamebutton.breadbox.command.ICommand;
+import io.github.blamebutton.breadbox.exception.InvalidValidatorException;
 import io.github.blamebutton.breadbox.validator.CommandValidator;
 import io.github.blamebutton.breadbox.validator.IValidator;
 import org.reflections.Reflections;
@@ -80,6 +81,8 @@ public class ReadyEventHandler implements IListener<ReadyEvent> {
                     String simpleName = validatorClass.getSimpleName();
                     instance.addValidatorForCommand(((IValidator) validatorInstance), commandName);
                     logger.info("Registered validator {} for command {}", simpleName, commandName);
+                } else {
+                    throw new InvalidValidatorException(validatorClass);
                 }
             }
         }
