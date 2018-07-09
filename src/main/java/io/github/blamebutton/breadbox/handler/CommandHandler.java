@@ -136,12 +136,13 @@ public class CommandHandler {
      */
     private List<ValidationResult> getValidationResults(CommandLine commandLine, List<IValidator> validators) {
         List<ValidationResult> results = new ArrayList<>();
-        if (!validators.isEmpty()) {
-            for (IValidator validator : validators) {
-                ValidationResult result = validator.validate(commandLine);
-                if (!result.isValid()) {
-                    results.add(result);
-                }
+        if (validators.isEmpty()) {
+            return results;
+        }
+        for (IValidator validator : validators) {
+            ValidationResult result = validator.validate(commandLine);
+            if (!result.isValid()) {
+                results.add(result);
             }
         }
         return results;
@@ -158,7 +159,7 @@ public class CommandHandler {
         builder.withTitle(I18n.get("command.validation.error.title", command));
         for (ValidationResult error : errors) {
             for (String errorMessage : error.getErrors()) {
-                builder.appendDesc(" - " + errorMessage + " \n");
+                builder.appendDesc("- " + errorMessage + " \n");
             }
         }
         return builder.build();
