@@ -5,6 +5,7 @@ import io.github.blamebutton.breadbox.handler.CommandHandler;
 import io.github.blamebutton.breadbox.handler.ReadyEventHandler;
 import io.github.blamebutton.breadbox.util.Environment;
 import io.github.blamebutton.breadbox.validator.IValidator;
+import org.jetbrains.annotations.NotNull;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
 
@@ -116,6 +117,9 @@ public class BreadboxApplication {
      * @param <T>     the type of the command
      */
     public <T extends ICommand> void registerCommand(String command, Class<T> klass) {
+        if (klass == null) {
+            throw new RuntimeException(String.format("Could not register command %s since it was null.", command));
+        }
         try {
             T cmdInstance = klass.getConstructor().newInstance();
             registerCommand(command, cmdInstance);
@@ -132,6 +136,7 @@ public class BreadboxApplication {
      * @param <T>       the type of validator which will be returned
      * @return the validator that has been registered
      */
+    @NotNull
     public <T extends IValidator> T addValidatorForCommand(T validator, String command) {
         if (commandExists(command)) {
             ICommand commandInstance = getCommand(command);
