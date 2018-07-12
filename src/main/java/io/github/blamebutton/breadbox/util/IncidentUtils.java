@@ -9,7 +9,6 @@ import java.util.UUID;
  */
 public final class IncidentUtils {
 
-
     private IncidentUtils() {
         // Util classes should not be constructed.
     }

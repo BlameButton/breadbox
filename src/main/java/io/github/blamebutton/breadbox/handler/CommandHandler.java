@@ -1,25 +1,28 @@
 package io.github.blamebutton.breadbox.handler;
 
-import io.github.blamebutton.breadbox.BreadboxApplication;
 import io.github.blamebutton.breadbox.command.ICommand;
 import io.github.blamebutton.breadbox.util.I18n;
 import io.github.blamebutton.breadbox.util.IncidentUtils;
+import io.github.blamebutton.breadbox.validator.IValidator;
+import io.github.blamebutton.breadbox.validator.ValidationResult;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.api.events.EventSubscriber;
+import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEditEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RequestBuffer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static io.github.blamebutton.breadbox.BreadboxApplication.instance;
 
 /**
  * Handles everything related to messages being received.
@@ -40,28 +43,24 @@ public class CommandHandler {
     @SuppressWarnings("unused")
     @EventSubscriber
     public void handle(MessageReceivedEvent event) {
-        onMessageReceived(event);
+        messageReceived(event);
     }
 
     @SuppressWarnings("unused")
     @EventSubscriber
     public void handle(MessageEditEvent event) {
-        onMessageReceived(event);
+        messageReceived(event);
     }
 
-    /**
-     * Check if the message is a valid command, if so, handle it.
-     *
-     * @param event the message event
-     */
-    private void onMessageReceived(MessageEvent event) {
+    private void messageReceived(MessageEvent event) {
         IMessage message = event.getMessage();
         String content = message.getContent();
         if (content == null || content.isEmpty()) {
             return;
         }
         String[] args = content.split(" ");
-        boolean isCommand = args[0].length() > 0 && COMMAND_PREFIXES.contains(args[0].charAt(0));
+        char prefix = args[0].charAt(0);
+        boolean isCommand = args[0].length() > 1 && COMMAND_PREFIXES.contains(prefix);
         if (isCommand) {
             handleCommand(event, args);
             return;
@@ -82,7 +81,6 @@ public class CommandHandler {
             return;
         }
         String command = arguments.get(0).substring(1);
-        arguments = parseArguments(String.join(" ", arguments));
         arguments.remove(0);
         callCommand(event, command, arguments);
     }
@@ -95,7 +93,7 @@ public class CommandHandler {
      * @param arguments the arguments for the command
      */
     private void callCommand(MessageEvent event, String command, List<String> arguments) {
-        ICommand cmd = BreadboxApplication.instance.getCommand(command);
+        ICommand cmd = instance.getCommand(command);
         IChannel channel = event.getChannel();
         if (cmd == null) {
             RequestBuffer.request(() -> {
@@ -112,7 +110,13 @@ public class CommandHandler {
             }
             String[] args = arguments.toArray(new String[]{});
             CommandLine commandLine = parser.parse(options, args);
-            cmd.handle(event.getMessage(), commandLine);
+            List<IValidator> validators = instance.getValidatorsForCommand(command);
+            List<ValidationResult> results = getValidationResults(commandLine, validators);
+            if (results.isEmpty() && instance.getClient().isReady()) {
+                cmd.handle(event.getMessage(), commandLine);
+            } else {
+                channel.sendMessage(formatErrorMessage(command, results));
+            }
         } catch (MissingArgumentException e) {
             String message = I18n.get("command.error.missing_argument", command, e.getOption().getOpt());
             channel.sendMessage(message);
@@ -124,28 +128,40 @@ public class CommandHandler {
     }
 
     /**
-     * Parse a command, when arguments between quotes, parse as one argument..
+     * Get all the validation results from a command line and a list of validators
      *
-     * @param command the command to parse
-     * @return the parsed command arguments
+     * @param commandLine the command line to validate
+     * @param validators  the validators to use
+     * @return the validation results
      */
-    private List<String> parseArguments(String command) {
-        List<String> matchList = new ArrayList<>();
-        String quotesRegex = "[^\\s\"']+|\"([^\"]*)\"|'([^']*)'";
-        Pattern regex = Pattern.compile(quotesRegex);
-        Matcher regexMatcher = regex.matcher(command);
-        while (regexMatcher.find()) {
-            if (regexMatcher.group(1) != null) {
-                // Add double-quoted string without the quotes
-                matchList.add(regexMatcher.group(1));
-            } else if (regexMatcher.group(2) != null) {
-                // Add single-quoted string without the quotes
-                matchList.add(regexMatcher.group(2));
-            } else {
-                // Add unquoted word
-                matchList.add(regexMatcher.group());
+    private List<ValidationResult> getValidationResults(CommandLine commandLine, List<IValidator> validators) {
+        List<ValidationResult> results = new ArrayList<>();
+        if (validators.isEmpty()) {
+            return results;
+        }
+        for (IValidator validator : validators) {
+            ValidationResult result = validator.validate(commandLine);
+            if (!result.isValid()) {
+                results.add(result);
             }
         }
-        return matchList;
+        return results;
+    }
+
+    /**
+     * Format all the validation results into an embed object
+     *
+     * @param errors the errors to format
+     * @return the formatted embed object
+     */
+    private EmbedObject formatErrorMessage(String command, List<ValidationResult> errors) {
+        EmbedBuilder builder = new EmbedBuilder();
+        builder.withTitle(I18n.get("command.validation.error.title", command));
+        for (ValidationResult error : errors) {
+            for (String errorMessage : error.getErrors()) {
+                builder.appendDesc("- " + errorMessage + " \n");
+            }
+        }
+        return builder.build();
     }
 }
