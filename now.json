@@ -1,0 +1,5 @@
+{
+    "env": {
+        "BREADBOX_TOKEN": "@breadbox-token"
+    }
+}
